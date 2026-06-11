@@ -1,0 +1,169 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/contexts/auth-context'
+import { useRouter } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
+import { Button } from '@/components/ui/button'
+import { Card, CardBody } from '@/components/ui/card'
+import { Rule, RuleSeverity, RuleTriggerType } from '@/types'
+import { Plus, Zap, AlertTriangle, Info, AlertCircle, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { RuleModal } from '@/modules/regras/rule-modal'
+
+const triggerLabel: Record<RuleTriggerType, string> = {
+  oportunidade_parada: 'Oportunidade parada',
+  prazo_fecho_proximo: 'Prazo de fecho próximo',
+  tarefa_atrasada: 'Tarefa atrasada',
+  valor_alto: 'Oportunidade de valor alto',
+}
+
+const severityStyle: Record<RuleSeverity, { label: string; color: string; icon: React.ElementType }> = {
+  info: { label: 'Info', color: 'text-blue-600 bg-blue-50 border-blue-200', icon: Info },
+  warning: { label: 'Atenção', color: 'text-amber-600 bg-amber-50 border-amber-200', icon: AlertTriangle },
+  danger: { label: 'Urgente', color: 'text-red-600 bg-red-50 border-red-200', icon: AlertCircle },
+}
+
+function configSummary(rule: Rule): string {
+  const cfg = rule.trigger_config as Record<string, unknown>
+  if (rule.trigger_type === 'oportunidade_parada') return `Sem atualização há ${cfg.dias ?? 7} dias`
+  if (rule.trigger_type === 'prazo_fecho_proximo') return `Fecho em menos de ${cfg.dias ?? 3} dias`
+  if (rule.trigger_type === 'tarefa_atrasada') return 'Tarefas com prazo ultrapassado'
+  if (rule.trigger_type === 'valor_alto') return `Valor acima de ${cfg.valor ?? 10000}€`
+  return ''
+}
+
+export default function RegrasPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const [rules, setRules] = useState<Rule[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing] = useState<Rule | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') router.replace('/dashboard')
+  }, [user, router])
+
+  const load = async () => {
+    const { data } = await supabase.from('rules').select('*').order('created_at', { ascending: false })
+    setRules((data ?? []) as Rule[])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const toggleActive = async (rule: Rule) => {
+    await supabase.from('rules').update({ is_active: !rule.is_active }).eq('id', rule.id)
+    setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: !r.is_active } : r))
+  }
+
+  const deleteRule = async (id: string) => {
+    if (!confirm('Apagar esta regra?')) return
+    await supabase.from('rules').delete().eq('id', id)
+    setRules(prev => prev.filter(r => r.id !== id))
+  }
+
+  if (!user || user.role !== 'admin') return null
+
+  return (
+    <div>
+      <PageHeader
+        title="Regras e Alertas"
+        description="Define regras automáticas que geram alertas para a equipa"
+        action={
+          <Button onClick={() => { setEditing(null); setModalOpen(true) }}>
+            <Plus size={16} /> Nova Regra
+          </Button>
+        }
+      />
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
+        </div>
+      ) : rules.length === 0 ? (
+        <Card>
+          <CardBody className="text-center py-14">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+              <Zap size={26} className="text-blue-500" />
+            </div>
+            <p className="font-semibold text-slate-800 mb-1">Sem regras definidas</p>
+            <p className="text-slate-400 text-sm mb-4">Cria regras para receber alertas automáticos sobre o pipeline e tarefas.</p>
+            <Button onClick={() => { setEditing(null); setModalOpen(true) }}>
+              <Plus size={15} /> Criar primeira regra
+            </Button>
+          </CardBody>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {rules.map(rule => {
+            const sev = severityStyle[rule.severity]
+            const SevIcon = sev.icon
+            return (
+              <Card key={rule.id} className={rule.is_active ? '' : 'opacity-50'}>
+                <CardBody className="flex items-center gap-4">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${sev.color}`}>
+                    <SevIcon size={17} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-900">{rule.name}</p>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sev.color}`}>
+                        {sev.label}
+                      </span>
+                      {!rule.is_active && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200">
+                          Inativa
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      <span className="font-medium text-slate-600">{triggerLabel[rule.trigger_type]}</span>
+                      {' · '}{configSummary(rule)}
+                    </p>
+                    {rule.description && (
+                      <p className="text-xs text-slate-400 mt-0.5 truncate">{rule.description}</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => toggleActive(rule)}
+                      title={rule.is_active ? 'Desativar' : 'Ativar'}
+                      className={`p-2 rounded-lg transition-colors ${rule.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}
+                    >
+                      {rule.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                    </button>
+                    <button
+                      onClick={() => { setEditing(rule); setModalOpen(true) }}
+                      className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => deleteRule(rule.id)}
+                      className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </CardBody>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {modalOpen && (
+        <RuleModal
+          rule={editing}
+          onClose={() => setModalOpen(false)}
+          onSaved={() => { setModalOpen(false); load() }}
+        />
+      )}
+    </div>
+  )
+}

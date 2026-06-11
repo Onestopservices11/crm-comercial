@@ -6,8 +6,9 @@ import {
   Users, MessageSquare, BarChart2, CheckSquare, Calendar,
   CalendarDays, DollarSign, UserCircle, FileText, FileEdit,
   BookOpen, LayoutDashboard, LogOut, ChevronLeft, ChevronRight,
-  UserCog, ShieldCheck, Menu, X
+  UserCog, ShieldCheck, Menu, X, Zap
 } from 'lucide-react'
+import { AlertsBell } from '@/components/alerts/alerts-bell'
 import { cn } from '@/lib/utils'
 import { UserRole } from '@/types'
 import { useState } from 'react'
@@ -60,6 +61,7 @@ const navGroups: NavGroup[] = [
       { href: '/equipas',      label: 'Equipas',      icon: Users,       module: 'equipas' },
       { href: '/utilizadores', label: 'Utilizadores', icon: UserCog,     module: 'utilizadores' },
       { href: '/permissoes',   label: 'Permissões',   icon: ShieldCheck, module: 'utilizadores', adminOnly: true },
+      { href: '/regras',       label: 'Regras',       icon: Zap,         module: 'regras',       adminOnly: true },
     ],
   },
 ]
@@ -149,6 +151,11 @@ export function Sidebar({ role, userName, onSignOut }: SidebarProps) {
 
         {/* Footer */}
         <div className="border-t border-gray-700 p-2 space-y-1">
+          {!collapsed && (
+            <div className="flex items-center justify-between px-2 py-1">
+              <AlertsBell />
+            </div>
+          )}
           <button onClick={() => setCollapsed(!collapsed)}
             className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
           >
@@ -168,9 +175,12 @@ export function Sidebar({ role, userName, onSignOut }: SidebarProps) {
       {/* ── MOBILE TOP BAR ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-gray-900 text-white flex items-center justify-between px-4 py-3 border-b border-gray-700">
         <p className="text-sm font-bold">Gambit Labs CRM</p>
-        <button onClick={() => setMobileOpen(true)} className="text-gray-300 hover:text-white">
-          <Menu size={22} />
-        </button>
+        <div className="flex items-center gap-1">
+          <AlertsBell />
+          <button onClick={() => setMobileOpen(true)} className="text-gray-300 hover:text-white p-1">
+            <Menu size={22} />
+          </button>
+        </div>
       </div>
 
       {/* ── MOBILE DRAWER ── */}

@@ -177,3 +177,35 @@ export interface ChatChannel {
   created_by: string
   created_at: string
 }
+
+export type RuleTriggerType = 'oportunidade_parada' | 'prazo_fecho_proximo' | 'tarefa_atrasada' | 'valor_alto'
+export type RuleSeverity = 'info' | 'warning' | 'danger'
+
+export interface Rule {
+  id: string
+  name: string
+  description?: string
+  trigger_type: RuleTriggerType
+  trigger_config: Record<string, unknown>
+  action_type: string
+  action_config: Record<string, unknown>
+  severity: RuleSeverity
+  is_active: boolean
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Alert {
+  id: string
+  rule_id?: string
+  rule_name?: string
+  entity_type: string
+  entity_id: string
+  entity_name?: string
+  message: string
+  severity: RuleSeverity
+  is_read: boolean
+  assigned_to?: string
+  created_at: string
+}
