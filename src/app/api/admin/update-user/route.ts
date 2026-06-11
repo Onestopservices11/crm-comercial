@@ -26,6 +26,11 @@ export async function POST(req: NextRequest) {
     await admin.from('profiles').update({ active: true }).eq('id', userId)
   }
 
+  if (action === 'confirm_email') {
+    const { error } = await admin.auth.admin.updateUserById(userId, { email_confirm: true })
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  }
+
   if (action === 'reset_password') {
     if (!password) return NextResponse.json({ error: 'Password obrigatória.' }, { status: 400 })
     const { error } = await admin.auth.admin.updateUserById(userId, { password })

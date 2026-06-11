@@ -183,9 +183,44 @@ export default function UtilizadoresPage() {
               )}
               {'error' in diagResult && <p className="text-red-500 text-xs mt-2">{String(diagResult.error)}</p>}
             </div>
-            <button onClick={() => setDiagResult(null)} className="mt-5 w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700 transition-colors">
-              Fechar
-            </button>
+            <div className="mt-5 flex flex-col gap-2">
+              {diagResult.exists === true && !diagResult.confirmed && (
+                <button
+                  onClick={async () => {
+                    const u = users.find(u => u.full_name === diagName)
+                    if (!u) return
+                    const res = await fetch('/api/admin/update-user', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: u.id, action: 'confirm_email' }),
+                    })
+                    if (res.ok) {
+                      setDiagResult(prev => prev ? { ...prev, confirmed: true } : prev)
+                    }
+                  }}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-medium text-white transition-colors"
+                >
+                  Confirmar email agora
+                </button>
+              )}
+              {diagResult.exists === false && (
+                <button
+                  onClick={async () => {
+                    const u = users.find(u => u.full_name === diagName)
+                    if (!u) return
+                    setEditing(u)
+                    setDiagResult(null)
+                    setModalOpen(true)
+                  }}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-medium text-white transition-colors"
+                >
+                  Recriar utilizador
+                </button>
+              )}
+              <button onClick={() => setDiagResult(null)} className="w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700 transition-colors">
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
