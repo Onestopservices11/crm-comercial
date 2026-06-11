@@ -8,8 +8,9 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
 import { Rule, RuleSeverity, RuleTriggerType } from '@/types'
-import { Plus, Zap, AlertTriangle, Info, AlertCircle, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus, Zap, AlertTriangle, Info, AlertCircle, Pencil, Trash2, ToggleLeft, ToggleRight, Play } from 'lucide-react'
 import { RuleModal } from '@/modules/regras/rule-modal'
+import { evaluateRules } from '@/lib/rules-engine'
 
 const triggerLabel: Record<RuleTriggerType, string> = {
   oportunidade_parada: 'Oportunidade parada',
@@ -40,6 +41,8 @@ export default function RegrasPage() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Rule | null>(null)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -59,6 +62,22 @@ export default function RegrasPage() {
     setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: !r.is_active } : r))
   }
 
+  const runTest = async () => {
+    if (!user) return
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const alerts = await evaluateRules(user.id)
+      setTestResult(alerts.length > 0
+        ? `✓ ${alerts.length} alerta(s) criado(s)`
+        : '✓ Sem novos alertas (dados actuais não violam nenhuma regra ou alertas já existem)'
+      )
+    } catch (e: unknown) {
+      setTestResult(`Erro: ${e instanceof Error ? e.message : String(e)}`)
+    }
+    setTesting(false)
+  }
+
   const deleteRule = async (id: string) => {
     if (!confirm('Apagar esta regra?')) return
     await supabase.from('rules').delete().eq('id', id)
@@ -73,11 +92,26 @@ export default function RegrasPage() {
         title="Regras e Alertas"
         description="Define regras automáticas que geram alertas para a equipa"
         action={
-          <Button onClick={() => { setEditing(null); setModalOpen(true) }}>
-            <Plus size={16} /> Nova Regra
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={runTest} disabled={testing}>
+              <Play size={15} /> {testing ? 'A testar...' : 'Testar regras'}
+            </Button>
+            <Button onClick={() => { setEditing(null); setModalOpen(true) }}>
+              <Plus size={16} /> Nova Regra
+            </Button>
+          </div>
         }
       />
+
+      {testResult && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium border ${
+          testResult.startsWith('Erro')
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+        }`}>
+          {testResult}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-12">

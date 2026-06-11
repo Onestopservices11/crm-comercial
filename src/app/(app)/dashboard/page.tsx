@@ -99,8 +99,8 @@ export default function DashboardPage() {
         oportunidadesRecentes: opps.filter(o => o.stage !== 'perdido').slice(0, 5).map(o => ({ ...o, client: Array.isArray(o.client) ? o.client[0] : o.client })) as DashboardData['oportunidadesRecentes'],
       })
       setLoading(false)
-      // Avaliar regras em background (silencioso)
-      evaluateRules(user.id).catch(() => {})
+      // Avaliar regras em background
+      evaluateRules(user.id).catch(console.error)
     }
     load()
   }, [user])

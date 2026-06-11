@@ -133,10 +133,12 @@ export async function evaluateRules(userId: string): Promise<Alert[]> {
 
   if (toInsert.length === 0) return []
 
-  const { data: inserted } = await supabase
+  const { data: inserted, error } = await supabase
     .from('alerts')
     .insert(toInsert)
     .select()
+
+  if (error) throw new Error(error.message)
 
   return (inserted ?? []) as Alert[]
 }
