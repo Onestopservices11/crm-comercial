@@ -13,9 +13,9 @@ import { formatDate } from '@/lib/utils'
 import { TaskModal } from '@/modules/tarefas/task-modal'
 
 const statusConfig: Record<TaskStatus, { label: string; icon: React.ElementType; color: string }> = {
-  por_fazer: { label: 'Por Fazer', icon: Circle, color: 'text-gray-500' },
+  por_fazer: { label: 'Por Fazer', icon: Circle, color: 'text-slate-400' },
   em_progresso: { label: 'Em Progresso', icon: Clock, color: 'text-blue-500' },
-  concluida: { label: 'Concluída', icon: CheckCircle2, color: 'text-green-500' },
+  concluida: { label: 'Concluída', icon: CheckCircle2, color: 'text-emerald-500' },
   cancelada: { label: 'Cancelada', icon: XCircle, color: 'text-red-400' },
 }
 
@@ -66,25 +66,26 @@ export default function TarefasPage() {
       />
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-5 border-b border-gray-200">
-        {(['todas', 'por_fazer', 'em_progresso', 'concluida', 'cancelada'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              filter === s
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {s === 'todas' ? 'Todas' : statusConfig[s].label}
-            {s !== 'todas' && (
-              <span className="ml-1.5 text-xs bg-gray-100 px-1.5 py-0.5 rounded-full">
-                {tasks.filter(t => t.status === s).length}
+      <div className="flex gap-1 mb-5 overflow-x-auto pb-1">
+        {(['todas', 'por_fazer', 'em_progresso', 'concluida', 'cancelada'] as const).map((s) => {
+          const count = s === 'todas' ? tasks.length : tasks.filter(t => t.status === s).length
+          return (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl whitespace-nowrap transition-all ${
+                filter === s
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              {s === 'todas' ? 'Todas' : statusConfig[s].label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${filter === s ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {count}
               </span>
-            )}
-          </button>
-        ))}
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (
@@ -112,18 +113,18 @@ export default function TarefasPage() {
                     <Icon size={20} />
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${task.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                    <p className={`text-sm font-medium ${task.status === 'concluida' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                       {task.title}
                     </p>
                     {task.description && (
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">{task.description}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">{task.description}</p>
                     )}
                     <div className="flex items-center gap-3 mt-1">
                       {task.assignee && (
-                        <span className="text-xs text-gray-400">Para: {task.assignee.full_name}</span>
+                        <span className="text-xs text-slate-400">Para: {task.assignee.full_name}</span>
                       )}
                       {task.due_date && (
-                        <span className="text-xs text-gray-400">{formatDate(task.due_date)}</span>
+                        <span className="text-xs text-slate-400">{formatDate(task.due_date)}</span>
                       )}
                     </div>
                   </div>

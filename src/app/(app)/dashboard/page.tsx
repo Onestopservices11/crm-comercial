@@ -111,39 +111,41 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { label: 'Clientes Ativos', value: data.clientesAtivos, sub: `${data.totalClientes} total`, icon: UserCircle, color: 'text-blue-600', bg: 'bg-blue-50', href: '/clientes' },
-    { label: 'Pipeline', value: formatCurrency(data.valorPipeline), sub: `${data.totalOportunidades} oportunidades`, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50', href: '/pipeline' },
-    { label: 'Tarefas Pendentes', value: data.tarefasPendentes, sub: 'por fazer / em progresso', icon: CheckSquare, color: 'text-yellow-600', bg: 'bg-yellow-50', href: '/tarefas' },
-    { label: 'Propostas Abertas', value: data.propostas, sub: 'enviadas / negociação', icon: FileEdit, color: 'text-purple-600', bg: 'bg-purple-50', href: '/propostas' },
-    { label: 'Comissões Pendentes', value: formatCurrency(data.valorComissoesPendentes), sub: `${data.comissoesPendentes} por aprovar`, icon: DollarSign, color: 'text-orange-600', bg: 'bg-orange-50', href: '/comissoes' },
-    { label: 'Eventos Hoje', value: data.eventosHoje.length, sub: new Date().toLocaleDateString('pt-PT', { weekday: 'long' }), icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50', href: '/agenda' },
+    { label: 'Clientes Ativos',      value: data.clientesAtivos,                    sub: `${data.totalClientes} total`,           icon: UserCircle,  color: 'text-blue-600',   bg: 'bg-blue-500',    href: '/clientes' },
+    { label: 'Pipeline Ativo',       value: formatCurrency(data.valorPipeline),     sub: `${data.totalOportunidades} oportunidades`, icon: TrendingUp,  color: 'text-emerald-600', bg: 'bg-emerald-500', href: '/pipeline' },
+    { label: 'Tarefas Pendentes',    value: data.tarefasPendentes,                  sub: 'por fazer / em progresso',               icon: CheckSquare, color: 'text-amber-600',  bg: 'bg-amber-500',   href: '/tarefas' },
+    { label: 'Propostas Abertas',    value: data.propostas,                         sub: 'enviadas / negociação',                  icon: FileEdit,    color: 'text-purple-600', bg: 'bg-purple-500',  href: '/propostas' },
+    { label: 'Comissões Pendentes',  value: formatCurrency(data.valorComissoesPendentes), sub: `${data.comissoesPendentes} por aprovar`, icon: DollarSign, color: 'text-orange-600', bg: 'bg-orange-500', href: '/comissoes' },
+    { label: 'Eventos Hoje',         value: data.eventosHoje.length,                sub: new Date().toLocaleDateString('pt-PT', { weekday: 'long' }), icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-500', href: '/agenda' },
   ]
 
+  const today = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })
+
   return (
-    <div>
-      <PageHeader
-        title={`Olá, ${user?.full_name.split(' ')[0]}`}
-        description={`${roleLabel(user!.role)} · ${new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`}
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Olá, {user?.full_name.split(' ')[0]} 👋</h1>
+        <p className="text-sm text-slate-500 mt-0.5 capitalize">{roleLabel(user!.role)} · {today}</p>
+      </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {stats.map((s) => {
           const Icon = s.icon
           return (
             <Link key={s.label} href={s.href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardBody className="flex items-center gap-3 py-3">
-                  <div className={`rounded-xl p-2.5 shrink-0 ${s.bg}`}>
-                    <Icon size={18} className={s.color} />
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`rounded-xl p-2 ${s.bg}`}>
+                    <Icon size={16} className="text-white" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 truncate">{s.label}</p>
-                    <p className="text-lg font-bold text-gray-900 leading-tight">{s.value}</p>
-                    <p className="text-xs text-gray-400 truncate">{s.sub}</p>
-                  </div>
-                </CardBody>
-              </Card>
+                  <ArrowRight size={14} className="text-slate-300 mt-1" />
+                </div>
+                <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{s.value}</p>
+                <p className="text-xs font-medium text-slate-600">{s.label}</p>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{s.sub}</p>
+              </div>
             </Link>
           )
         })}
@@ -152,142 +154,158 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* Pipeline por etapa */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Pipeline</h3>
-              <Link href="/pipeline" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                Ver tudo <ArrowRight size={12} />
-              </Link>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-semibold text-slate-900">Pipeline</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Valor por etapa</p>
             </div>
-            <div className="space-y-2.5">
-              {data.pipelinePorEtapa.map(item => {
-                const maxVal = Math.max(...data.pipelinePorEtapa.map(i => i.value), 1)
-                return (
-                  <div key={item.stage} className="flex items-center gap-3">
-                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${stageColor[item.stage]}`} />
-                    <span className="text-sm text-gray-600 w-24 shrink-0">{stageLabel[item.stage]}</span>
-                    <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${stageColor[item.stage]}`}
-                        style={{ width: `${(item.value / maxVal) * 100}%` }}
-                      />
+            <Link href="/pipeline" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              Ver tudo <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {data.pipelinePorEtapa.map(item => {
+              const maxVal = Math.max(...data.pipelinePorEtapa.map(i => i.value), 1)
+              const pct = Math.round((item.value / maxVal) * 100)
+              return (
+                <div key={item.stage}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${stageColor[item.stage]}`} />
+                      <span className="text-xs font-medium text-slate-600">{stageLabel[item.stage]}</span>
+                      <span className="text-xs text-slate-400">({item.count})</span>
                     </div>
-                    <span className="text-xs text-gray-500 w-8 text-right shrink-0">{item.count}</span>
-                    <span className="text-xs font-medium text-gray-700 w-24 text-right shrink-0">{formatCurrency(item.value)}</span>
+                    <span className="text-xs font-semibold text-slate-700">{formatCurrency(item.value)}</span>
                   </div>
-                )
-              })}
-              {data.pipelinePorEtapa.every(i => i.count === 0) && (
-                <p className="text-sm text-gray-400 text-center py-4">Sem oportunidades no pipeline.</p>
-              )}
-            </div>
-          </CardBody>
-        </Card>
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${stageColor[item.stage]}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+            {data.pipelinePorEtapa.every(i => i.count === 0) && (
+              <p className="text-sm text-slate-400 text-center py-6">Sem oportunidades no pipeline.</p>
+            )}
+          </div>
+        </div>
 
         {/* Tarefas pendentes */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Tarefas Pendentes</h3>
-              <Link href="/tarefas" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                Ver tudo <ArrowRight size={12} />
-              </Link>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-semibold text-slate-900">Tarefas Pendentes</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{data.tarefasPendentes} por concluir</p>
             </div>
-            {data.tarefasHoje.length === 0 ? (
-              <div className="text-center py-6">
-                <CheckSquare size={32} className="mx-auto text-green-400 mb-2" />
-                <p className="text-sm text-gray-400">Tudo em dia!</p>
+            <Link href="/tarefas" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              Ver tudo <ArrowRight size={12} />
+            </Link>
+          </div>
+          {data.tarefasHoje.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <CheckSquare size={22} className="text-emerald-500" />
               </div>
-            ) : (
-              <div className="space-y-2">
-                {data.tarefasHoje.map(task => (
-                  <Link key={task.id} href="/tarefas">
-                    <div className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${priorityColor[task.priority]}`} />
-                      <span className="text-sm text-gray-700 flex-1 truncate">{task.title}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                        task.status === 'em_progresso' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {task.status === 'em_progresso' ? 'Em progresso' : 'Por fazer'}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+              <p className="text-sm font-medium text-slate-700">Tudo em dia!</p>
+              <p className="text-xs text-slate-400 mt-1">Sem tarefas pendentes.</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {data.tarefasHoje.map(task => (
+                <Link key={task.id} href="/tarefas">
+                  <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${priorityColor[task.priority]}`} />
+                    <span className="text-sm text-slate-700 flex-1 truncate group-hover:text-slate-900">{task.title}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                      task.status === 'em_progresso' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {task.status === 'em_progresso' ? 'Em progresso' : 'Por fazer'}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Eventos de hoje */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Agenda de Hoje</h3>
-              <Link href="/agenda" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                Ver agenda <ArrowRight size={12} />
-              </Link>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-semibold text-slate-900">Agenda de Hoje</h3>
+              <p className="text-xs text-slate-400 mt-0.5 capitalize">{today}</p>
             </div>
-            {data.eventosHoje.length === 0 ? (
-              <div className="text-center py-6">
-                <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-sm text-gray-400">Sem eventos hoje.</p>
+            <Link href="/agenda" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              Ver agenda <ArrowRight size={12} />
+            </Link>
+          </div>
+          {data.eventosHoje.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Calendar size={22} className="text-slate-400" />
               </div>
-            ) : (
-              <div className="space-y-2">
-                {data.eventosHoje.map(ev => (
-                  <div key={ev.id} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-gray-50">
-                    <div className="text-center shrink-0 w-12">
-                      <p className="text-sm font-bold text-gray-700">
-                        {new Date(ev.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{ev.title}</p>
-                      <p className="text-xs text-gray-400">{eventTypeLabel[ev.event_type]}</p>
-                    </div>
+              <p className="text-sm font-medium text-slate-700">Dia livre</p>
+              <p className="text-xs text-slate-400 mt-1">Sem eventos agendados.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {data.eventosHoje.map(ev => (
+                <div key={ev.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-slate-50">
+                  <div className="shrink-0 text-center w-12">
+                    <p className="text-xs font-bold text-slate-900">
+                      {new Date(ev.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                  <div className="w-px h-8 bg-slate-200 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{ev.title}</p>
+                    <p className="text-xs text-slate-400">{eventTypeLabel[ev.event_type]}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Oportunidades recentes */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Oportunidades Recentes</h3>
-              <Link href="/pipeline" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                Ver pipeline <ArrowRight size={12} />
-              </Link>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-semibold text-slate-900">Oportunidades Recentes</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{data.totalOportunidades} ativas</p>
             </div>
-            {data.oportunidadesRecentes.length === 0 ? (
-              <div className="text-center py-6">
-                <TrendingUp size={32} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-sm text-gray-400">Sem oportunidades ainda.</p>
+            <Link href="/pipeline" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              Ver pipeline <ArrowRight size={12} />
+            </Link>
+          </div>
+          {data.oportunidadesRecentes.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <TrendingUp size={22} className="text-slate-400" />
               </div>
-            ) : (
-              <div className="space-y-2">
-                {data.oportunidadesRecentes.map(opp => (
-                  <Link key={opp.id} href="/pipeline">
-                    <div className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${stageColor[opp.stage]}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{opp.title}</p>
-                        {opp.client && <p className="text-xs text-gray-400 truncate">{opp.client.name}</p>}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-gray-900">{formatCurrency(opp.value)}</p>
-                        <p className="text-xs text-gray-400">{stageLabel[opp.stage]}</p>
-                      </div>
+              <p className="text-sm font-medium text-slate-700">Sem oportunidades</p>
+              <p className="text-xs text-slate-400 mt-1">Cria a primeira no pipeline.</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {data.oportunidadesRecentes.map(opp => (
+                <Link key={opp.id} href="/pipeline">
+                  <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${stageColor[opp.stage]}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate group-hover:text-slate-900">{opp.title}</p>
+                      {opp.client && <p className="text-xs text-slate-400 truncate">{opp.client.name}</p>}
                     </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-slate-900">{formatCurrency(opp.value)}</p>
+                      <p className="text-xs text-slate-400">{stageLabel[opp.stage]}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>
