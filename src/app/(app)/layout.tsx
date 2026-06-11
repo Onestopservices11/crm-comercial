@@ -33,8 +33,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <PermissionsProvider>
       <div className="flex h-screen overflow-hidden">
         <Sidebar role={user.role} userName={user.full_name} onSignOut={handleSignOut} />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6 max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto pt-0 md:pt-0">
+          {/* Top bar spacer mobile */}
+          <div className="h-14 md:hidden shrink-0" />
+          <div className="p-4 md:p-6 max-w-7xl mx-auto pb-24 md:pb-6">
             {children}
           </div>
         </main>

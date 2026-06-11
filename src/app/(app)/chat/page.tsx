@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
 import { Avatar } from '@/components/ui/avatar'
 import { ChatChannel, ChatMessage, UserProfile } from '@/types'
-import { Send, Plus, Hash, MessageSquare, X, Search } from 'lucide-react'
+import { Send, Plus, Hash, MessageSquare, X, Search, ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function ChatPage() {
@@ -227,9 +227,13 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-0px)] -mx-6 -mt-6 overflow-hidden">
-      {/* Sidebar de canais */}
-      <div className="w-56 bg-gray-800 flex flex-col shrink-0">
+    <div className="flex h-[calc(100dvh-56px)] md:h-[calc(100vh-0px)] -mx-4 md:-mx-6 -mt-0 md:-mt-6 overflow-hidden">
+      {/* Sidebar de canais — esconde no mobile quando canal selecionado */}
+      <div className={cn(
+        'bg-gray-800 flex flex-col shrink-0',
+        'w-full md:w-56',
+        selectedChannel ? 'hidden md:flex' : 'flex'
+      )}>
         <div className="px-4 py-4 border-b border-gray-700">
           <p className="text-xs font-bold text-white uppercase tracking-wider">Chat</p>
         </div>
@@ -338,11 +342,21 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Área de mensagens */}
-      <div className="flex-1 flex flex-col bg-white overflow-hidden">
+      {/* Área de mensagens — esconde no mobile quando sem canal */}
+      <div className={cn(
+        'flex-1 flex flex-col bg-white overflow-hidden',
+        !selectedChannel && 'hidden md:flex'
+      )}>
         {selectedChannel ? (
           <>
-            <div className="px-5 py-3 border-b border-gray-200 flex items-center gap-2 shrink-0 bg-white">
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2 shrink-0 bg-white">
+              {/* Botão voltar no mobile */}
+              <button
+                onClick={() => setSelectedChannel(null)}
+                className="md:hidden p-1 -ml-1 text-gray-500 hover:text-gray-700"
+              >
+                <ChevronLeft size={20} />
+              </button>
               {selectedChannel.type === 'direct'
                 ? <MessageSquare size={16} className="text-gray-400" />
                 : <Hash size={16} className="text-gray-400" />}
