@@ -7,17 +7,10 @@ import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
-import { Rule, RuleSeverity, RuleTriggerType } from '@/types'
+import { Rule, RuleSeverity } from '@/types'
 import { Plus, Zap, AlertTriangle, Info, AlertCircle, Pencil, Trash2, ToggleLeft, ToggleRight, Play } from 'lucide-react'
 import { RuleModal } from '@/modules/regras/rule-modal'
-import { evaluateRules } from '@/lib/rules-engine'
-
-const triggerLabel: Record<RuleTriggerType, string> = {
-  oportunidade_parada: 'Oportunidade parada',
-  prazo_fecho_proximo: 'Prazo de fecho próximo',
-  tarefa_atrasada: 'Tarefa atrasada',
-  valor_alto: 'Oportunidade de valor alto',
-}
+import { evaluateRules, RuleDefinition, ENTITY_FIELDS } from '@/lib/rules-engine'
 
 const severityStyle: Record<RuleSeverity, { label: string; color: string; icon: React.ElementType }> = {
   info: { label: 'Info', color: 'text-blue-600 bg-blue-50 border-blue-200', icon: Info },
@@ -25,13 +18,23 @@ const severityStyle: Record<RuleSeverity, { label: string; color: string; icon: 
   danger: { label: 'Urgente', color: 'text-red-600 bg-red-50 border-red-200', icon: AlertCircle },
 }
 
-function configSummary(rule: Rule): string {
-  const cfg = rule.trigger_config as Record<string, unknown>
-  if (rule.trigger_type === 'oportunidade_parada') return `Sem atualização há ${cfg.dias ?? 7} dias`
-  if (rule.trigger_type === 'prazo_fecho_proximo') return `Fecho em menos de ${cfg.dias ?? 3} dias`
-  if (rule.trigger_type === 'tarefa_atrasada') return 'Tarefas com prazo ultrapassado'
-  if (rule.trigger_type === 'valor_alto') return `Valor acima de ${cfg.valor ?? 10000}€`
-  return ''
+const entityLabel: Record<string, string> = {
+  opportunity: 'Oportunidade',
+  task: 'Tarefa',
+  client: 'Cliente',
+}
+
+function conditionSummary(def: RuleDefinition): string {
+  if (!def?.conditions?.length) return ''
+  return def.conditions.map(c => {
+    const fieldMeta = ENTITY_FIELDS[def.entity_type]?.find(f => f.key === c.field)
+    const fieldLabel = fieldMeta?.label ?? c.field
+    const opLabel: Record<string, string> = {
+      equals: '=', not_equals: '≠', greater_than: '>', less_than: '<',
+      older_than_days: 'há mais de', within_days: 'em menos de', contains: 'contém',
+    }
+    return `${fieldLabel} ${opLabel[c.operator] ?? c.operator} ${c.value}`
+  }).join(' · ')
 }
 
 export default function RegrasPage() {
@@ -62,6 +65,12 @@ export default function RegrasPage() {
     setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: !r.is_active } : r))
   }
 
+  const deleteRule = async (id: string) => {
+    if (!confirm('Apagar esta regra?')) return
+    await supabase.from('rules').delete().eq('id', id)
+    setRules(prev => prev.filter(r => r.id !== id))
+  }
+
   const runTest = async () => {
     if (!user) return
     setTesting(true)
@@ -70,18 +79,12 @@ export default function RegrasPage() {
       const alerts = await evaluateRules(user.id)
       setTestResult(alerts.length > 0
         ? `✓ ${alerts.length} alerta(s) criado(s)`
-        : '✓ Sem novos alertas (dados actuais não violam nenhuma regra ou alertas já existem)'
+        : '✓ Sem novos alertas — nenhum registo viola as condições activas no momento'
       )
     } catch (e: unknown) {
       setTestResult(`Erro: ${e instanceof Error ? e.message : String(e)}`)
     }
     setTesting(false)
-  }
-
-  const deleteRule = async (id: string) => {
-    if (!confirm('Apagar esta regra?')) return
-    await supabase.from('rules').delete().eq('id', id)
-    setRules(prev => prev.filter(r => r.id !== id))
   }
 
   if (!user || user.role !== 'admin') return null
@@ -90,11 +93,11 @@ export default function RegrasPage() {
     <div>
       <PageHeader
         title="Regras e Alertas"
-        description="Define regras automáticas que geram alertas para a equipa"
+        description="Define regras personalizadas que geram alertas automáticos para a equipa"
         action={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={runTest} disabled={testing}>
-              <Play size={15} /> {testing ? 'A testar...' : 'Testar regras'}
+              <Play size={15} /> {testing ? 'A testar...' : 'Testar agora'}
             </Button>
             <Button onClick={() => { setEditing(null); setModalOpen(true) }}>
               <Plus size={16} /> Nova Regra
@@ -124,7 +127,9 @@ export default function RegrasPage() {
               <Zap size={26} className="text-blue-500" />
             </div>
             <p className="font-semibold text-slate-800 mb-1">Sem regras definidas</p>
-            <p className="text-slate-400 text-sm mb-4">Cria regras para receber alertas automáticos sobre o pipeline e tarefas.</p>
+            <p className="text-slate-400 text-sm mb-4">
+              Cria regras com as tuas próprias condições para receber alertas automáticos.
+            </p>
             <Button onClick={() => { setEditing(null); setModalOpen(true) }}>
               <Plus size={15} /> Criar primeira regra
             </Button>
@@ -135,16 +140,22 @@ export default function RegrasPage() {
           {rules.map(rule => {
             const sev = severityStyle[rule.severity]
             const SevIcon = sev.icon
+            const def = rule.definition as unknown as RuleDefinition
             return (
               <Card key={rule.id} className={rule.is_active ? '' : 'opacity-50'}>
-                <CardBody className="flex items-center gap-4">
-                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${sev.color}`}>
+                <CardBody className="flex items-start gap-4">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${sev.color}`}>
                     <SevIcon size={17} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-900">{rule.name}</p>
+                      {def?.entity_type && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                          {entityLabel[def.entity_type]}
+                        </span>
+                      )}
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sev.color}`}>
                         {sev.label}
                       </span>
@@ -154,16 +165,19 @@ export default function RegrasPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      <span className="font-medium text-slate-600">{triggerLabel[rule.trigger_type]}</span>
-                      {' · '}{configSummary(rule)}
-                    </p>
-                    {rule.description && (
-                      <p className="text-xs text-slate-400 mt-0.5 truncate">{rule.description}</p>
+                    {def?.conditions?.length > 0 && (
+                      <p className="text-xs text-slate-500 mt-1 font-mono">
+                        SE {conditionSummary(def)}
+                      </p>
+                    )}
+                    {def?.action?.message_template && (
+                      <p className="text-xs text-slate-400 mt-0.5 truncate">
+                        → {def.action.message_template}
+                      </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => toggleActive(rule)}
                       title={rule.is_active ? 'Desativar' : 'Ativar'}

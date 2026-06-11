@@ -178,17 +178,12 @@ export interface ChatChannel {
   created_at: string
 }
 
-export type RuleTriggerType = 'oportunidade_parada' | 'prazo_fecho_proximo' | 'tarefa_atrasada' | 'valor_alto'
 export type RuleSeverity = 'info' | 'warning' | 'danger'
 
 export interface Rule {
   id: string
   name: string
-  description?: string
-  trigger_type: RuleTriggerType
-  trigger_config: Record<string, unknown>
-  action_type: string
-  action_config: Record<string, unknown>
+  definition: Record<string, unknown>
   severity: RuleSeverity
   is_active: boolean
   created_by?: string
