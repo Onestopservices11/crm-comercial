@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { UserProfile, UserRole } from '@/types'
 import { roleLabel, roleColor } from '@/lib/utils'
-import { Plus, Pencil, Ban, CheckCircle2, KeyRound } from 'lucide-react'
+import { Plus, Pencil, Ban, CheckCircle2, Search } from 'lucide-react'
 import { UserModal } from '@/modules/utilizadores/user-modal'
 import { createClient } from '@/lib/supabase/client'
 
@@ -19,6 +19,8 @@ export default function UtilizadoresPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<UserProfile | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [diagResult, setDiagResult] = useState<Record<string, unknown> | null>(null)
+  const [diagName, setDiagName] = useState('')
   const supabase = createClient()
 
   const load = async () => {
@@ -41,6 +43,18 @@ export default function UtilizadoresPage() {
     })
     setActionLoading(null)
     load()
+  }
+
+  const diagnose = async (u: UserProfile) => {
+    setDiagResult(null)
+    setDiagName(u.full_name)
+    const res = await fetch('/api/admin/diagnose-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: u.id }),
+    })
+    const json = await res.json()
+    setDiagResult(json)
   }
 
   const byRole = (role: UserRole) => users.filter(u => u.role === role)
@@ -112,6 +126,13 @@ export default function UtilizadoresPage() {
                               >
                                 <Pencil size={14} />
                               </button>
+                              <button
+                                onClick={() => diagnose(u)}
+                                className="p-1.5 text-gray-400 hover:text-purple-600 rounded"
+                                title="Diagnosticar conta"
+                              >
+                                <Search size={14} />
+                              </button>
                               {!isSelf && isActive && (
                                 <button
                                   onClick={() => adminAction(u.id, 'disable')}
@@ -142,6 +163,30 @@ export default function UtilizadoresPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {diagResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="font-semibold text-slate-900 mb-4">Diagnóstico — {diagName}</h3>
+            <div className="space-y-2 text-sm">
+              {diagResult.exists === false ? (
+                <p className="text-red-600 font-medium">⚠ Conta NÃO existe no Supabase Auth.<br/>O perfil existe mas o utilizador não foi criado no sistema de autenticação.</p>
+              ) : (
+                <>
+                  <div className="flex justify-between"><span className="text-slate-500">Existe no Auth</span><span className="font-medium text-emerald-600">✓ Sim</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Email confirmado</span><span className={`font-medium ${diagResult.confirmed ? 'text-emerald-600' : 'text-red-600'}`}>{diagResult.confirmed ? '✓ Sim' : '✗ Não'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Conta banida</span><span className={`font-medium ${diagResult.banned ? 'text-red-600' : 'text-emerald-600'}`}>{diagResult.banned ? `✗ Sim (até ${String(diagResult.banned_until)})` : '✓ Não'}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Último login</span><span className="text-slate-700">{diagResult.last_sign_in ? new Date(diagResult.last_sign_in as string).toLocaleString('pt-PT') : 'Nunca'}</span></div>
+                </>
+              )}
+              {'error' in diagResult && <p className="text-red-500 text-xs mt-2">{String(diagResult.error)}</p>}
+            </div>
+            <button onClick={() => setDiagResult(null)} className="mt-5 w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700 transition-colors">
+              Fechar
+            </button>
+          </div>
         </div>
       )}
 

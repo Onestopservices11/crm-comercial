@@ -15,6 +15,7 @@ const ENTITY_LABELS: Record<RuleEntityType, string> = {
   opportunity: 'Oportunidade',
   task: 'Tarefa',
   client: 'Cliente',
+  comercial: 'Comercial',
 }
 
 const SEVERITY_OPTIONS = [
@@ -191,6 +192,16 @@ export function RuleModal({ rule, onClose, onSaved }: Props) {
                         <option value="">Selecionar...</option>
                         {selectOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
+                    ) : fieldType === 'day_of_month' ? (
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={cond.value}
+                        onChange={e => updateCondition(i, { value: e.target.value })}
+                        placeholder="Dia (1-31)"
+                        className="w-24 text-xs rounded-lg border border-slate-200 bg-white px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     ) : (
                       <input
                         type="number"

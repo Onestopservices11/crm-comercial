@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/client'
 import { Alert } from '@/types'
 
-export type RuleEntityType = 'opportunity' | 'task' | 'client'
+export type RuleEntityType = 'opportunity' | 'task' | 'client' | 'comercial'
 export type RuleOperator =
   | 'equals' | 'not_equals'
-  | 'greater_than' | 'less_than'
+  | 'greater_than' | 'less_than' | 'greater_or_equal' | 'less_or_equal'
   | 'older_than_days' | 'within_days'
   | 'contains'
 
@@ -17,7 +17,7 @@ export interface RuleCondition {
 export interface RuleAction {
   type: 'create_alert'
   severity: 'info' | 'warning' | 'danger'
-  message_template: string  // pode usar {name}, {field}, {value}
+  message_template: string
 }
 
 export interface RuleDefinition {
@@ -26,76 +26,90 @@ export interface RuleDefinition {
   action: RuleAction
 }
 
-// Campos disponíveis por entidade
-export const ENTITY_FIELDS: Record<RuleEntityType, { key: string; label: string; type: 'text' | 'number' | 'days' | 'select' }[]> = {
+export const ENTITY_FIELDS: Record<RuleEntityType, { key: string; label: string; type: 'text' | 'number' | 'days' | 'select' | 'day_of_month' }[]> = {
   opportunity: [
-    { key: 'stage', label: 'Etapa', type: 'select' },
-    { key: 'value', label: 'Valor (€)', type: 'number' },
-    { key: 'days_since_update', label: 'Dias sem atualização', type: 'days' },
-    { key: 'days_until_close', label: 'Dias até ao fecho', type: 'days' },
+    { key: 'stage',              label: 'Etapa',                  type: 'select' },
+    { key: 'value',              label: 'Valor (€)',              type: 'number' },
+    { key: 'days_since_update',  label: 'Dias sem atualização',   type: 'days' },
+    { key: 'days_until_close',   label: 'Dias até ao fecho',      type: 'days' },
   ],
   task: [
-    { key: 'status', label: 'Estado', type: 'select' },
-    { key: 'priority', label: 'Prioridade', type: 'select' },
+    { key: 'status',      label: 'Estado',       type: 'select' },
+    { key: 'priority',    label: 'Prioridade',   type: 'select' },
     { key: 'days_overdue', label: 'Dias em atraso', type: 'days' },
   ],
   client: [
-    { key: 'status', label: 'Estado', type: 'select' },
-    { key: 'days_since_update', label: 'Dias sem atualização', type: 'days' },
+    { key: 'status',             label: 'Estado',                 type: 'select' },
+    { key: 'days_since_update',  label: 'Dias sem atualização',   type: 'days' },
+  ],
+  comercial: [
+    { key: 'dia_do_mes',          label: 'Dia do mês (hoje)',      type: 'day_of_month' },
+    { key: 'reunioes_este_mes',   label: 'Reuniões este mês',      type: 'number' },
+    { key: 'leads_este_mes',      label: 'Leads criados este mês', type: 'number' },
+    { key: 'tarefas_em_atraso',   label: 'Tarefas em atraso',      type: 'number' },
+    { key: 'oportunidades_ativas', label: 'Oportunidades ativas',  type: 'number' },
+    { key: 'valor_pipeline',      label: 'Valor no pipeline (€)',  type: 'number' },
   ],
 }
 
 export const FIELD_OPTIONS: Record<string, { value: string; label: string }[]> = {
   'opportunity.stage': [
-    { value: 'lead', label: 'Lead' },
-    { value: 'contactado', label: 'Contactado' },
-    { value: 'proposta', label: 'Proposta' },
-    { value: 'negociacao', label: 'Negociação' },
-    { value: 'fecho', label: 'Fecho' },
-    { value: 'perdido', label: 'Perdido' },
+    { value: 'lead',        label: 'Lead' },
+    { value: 'contactado',  label: 'Contactado' },
+    { value: 'proposta',    label: 'Proposta' },
+    { value: 'negociacao',  label: 'Negociação' },
+    { value: 'fecho',       label: 'Fecho' },
+    { value: 'perdido',     label: 'Perdido' },
   ],
   'task.status': [
-    { value: 'por_fazer', label: 'Por Fazer' },
+    { value: 'por_fazer',    label: 'Por Fazer' },
     { value: 'em_progresso', label: 'Em Progresso' },
-    { value: 'concluida', label: 'Concluída' },
-    { value: 'cancelada', label: 'Cancelada' },
+    { value: 'concluida',    label: 'Concluída' },
+    { value: 'cancelada',    label: 'Cancelada' },
   ],
   'task.priority': [
-    { value: 'baixa', label: 'Baixa' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'alta', label: 'Alta' },
+    { value: 'baixa',   label: 'Baixa' },
+    { value: 'normal',  label: 'Normal' },
+    { value: 'alta',    label: 'Alta' },
     { value: 'urgente', label: 'Urgente' },
   ],
   'client.status': [
-    { value: 'lead', label: 'Lead' },
-    { value: 'prospect', label: 'Prospect' },
-    { value: 'ativo', label: 'Ativo' },
-    { value: 'inativo', label: 'Inativo' },
+    { value: 'lead',      label: 'Lead' },
+    { value: 'prospect',  label: 'Prospect' },
+    { value: 'ativo',     label: 'Ativo' },
+    { value: 'inativo',   label: 'Inativo' },
     { value: 'arquivado', label: 'Arquivado' },
   ],
 }
 
 export const OPERATORS_FOR_TYPE: Record<string, { value: RuleOperator; label: string }[]> = {
   select: [
-    { value: 'equals', label: 'é igual a' },
+    { value: 'equals',     label: 'é igual a' },
     { value: 'not_equals', label: 'é diferente de' },
   ],
   number: [
-    { value: 'equals', label: 'é igual a' },
-    { value: 'greater_than', label: 'é maior que' },
-    { value: 'less_than', label: 'é menor que' },
+    { value: 'equals',           label: 'é igual a' },
+    { value: 'greater_than',     label: 'é maior que' },
+    { value: 'less_than',        label: 'é menor que' },
+    { value: 'greater_or_equal', label: 'é maior ou igual a' },
+    { value: 'less_or_equal',    label: 'é menor ou igual a' },
+  ],
+  day_of_month: [
+    { value: 'greater_or_equal', label: 'é a partir do dia' },
+    { value: 'less_or_equal',    label: 'é até ao dia' },
+    { value: 'greater_than',     label: 'é depois do dia' },
+    { value: 'less_than',        label: 'é antes do dia' },
   ],
   days: [
-    { value: 'greater_than', label: 'é mais de X dias' },
-    { value: 'less_than', label: 'é menos de X dias' },
+    { value: 'greater_than', label: 'mais de X dias' },
+    { value: 'less_than',    label: 'menos de X dias' },
   ],
   text: [
-    { value: 'equals', label: 'é igual a' },
+    { value: 'equals',   label: 'é igual a' },
     { value: 'contains', label: 'contém' },
   ],
 }
 
-// Avalia uma condição contra um registo
 function evalCondition(cond: RuleCondition, record: Record<string, unknown>, now: Date): boolean {
   const { field, operator, value } = cond
   const numValue = Number(value)
@@ -108,7 +122,6 @@ function evalCondition(cond: RuleCondition, record: Record<string, unknown>, now
     if (operator === 'less_than') return days < numValue
     return false
   }
-
   if (field === 'days_until_close') {
     const closeDate = record.expected_close_date as string
     if (!closeDate) return false
@@ -117,7 +130,6 @@ function evalCondition(cond: RuleCondition, record: Record<string, unknown>, now
     if (operator === 'less_than') return days < numValue
     return false
   }
-
   if (field === 'days_overdue') {
     const due = record.due_date as string
     if (!due) return false
@@ -128,21 +140,86 @@ function evalCondition(cond: RuleCondition, record: Record<string, unknown>, now
   }
 
   const fieldValue = record[field]
+  const numField = Number(fieldValue)
 
-  if (operator === 'equals') return String(fieldValue) === value
-  if (operator === 'not_equals') return String(fieldValue) !== value
-  if (operator === 'greater_than') return Number(fieldValue) > numValue
-  if (operator === 'less_than') return Number(fieldValue) < numValue
-  if (operator === 'contains') return String(fieldValue).toLowerCase().includes(value.toLowerCase())
-
+  if (operator === 'equals')           return String(fieldValue) === value
+  if (operator === 'not_equals')       return String(fieldValue) !== value
+  if (operator === 'greater_than')     return numField > numValue
+  if (operator === 'less_than')        return numField < numValue
+  if (operator === 'greater_or_equal') return numField >= numValue
+  if (operator === 'less_or_equal')    return numField <= numValue
+  if (operator === 'contains')         return String(fieldValue).toLowerCase().includes(value.toLowerCase())
   return false
+}
+
+// Calcula métricas por comercial
+async function buildComercialRecords(supabase: ReturnType<typeof createClient>, now: Date): Promise<Record<string, unknown>[]> {
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+  const today      = now.toISOString().split('T')[0]
+  const dayOfMonth = now.getDate()
+
+  const { data: users } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .eq('role', 'comercial')
+
+  if (!users?.length) return []
+
+  const records: Record<string, unknown>[] = []
+
+  for (const user of users) {
+    const [
+      { data: reunioes },
+      { data: leads },
+      { data: tarefasAtraso },
+      { data: oppsAtivas },
+    ] = await Promise.all([
+      supabase.from('calendar_events')
+        .select('id')
+        .eq('owner_id', user.id)
+        .eq('event_type', 'reuniao')
+        .gte('start_at', monthStart)
+        .lte('start_at', monthEnd),
+      supabase.from('opportunities')
+        .select('id')
+        .eq('owner_id', user.id)
+        .gte('created_at', monthStart)
+        .lte('created_at', monthEnd),
+      supabase.from('tasks')
+        .select('id')
+        .eq('assigned_to', user.id)
+        .in('status', ['por_fazer', 'em_progresso'])
+        .lt('due_date', today),
+      supabase.from('opportunities')
+        .select('id, value')
+        .eq('owner_id', user.id)
+        .not('stage', 'in', '(fecho,perdido)'),
+    ])
+
+    const valorPipeline = (oppsAtivas ?? []).reduce((s, o: Record<string, unknown>) => s + Number(o.value ?? 0), 0)
+
+    records.push({
+      id: user.id,
+      name: user.full_name,
+      owner_id: user.id,
+      dia_do_mes: dayOfMonth,
+      reunioes_este_mes:   reunioes?.length ?? 0,
+      leads_este_mes:      leads?.length ?? 0,
+      tarefas_em_atraso:   tarefasAtraso?.length ?? 0,
+      oportunidades_ativas: oppsAtivas?.length ?? 0,
+      valor_pipeline:      valorPipeline,
+    })
+  }
+
+  return records
 }
 
 function buildMessage(template: string, record: Record<string, unknown>): string {
   return template.replace(/\{(\w+)\}/g, (_, key) => String(record[key] ?? key))
 }
 
-export async function evaluateRules(userId: string): Promise<Alert[]> {
+export async function evaluateRules(_userId: string): Promise<Alert[]> {
   const supabase = createClient()
 
   const { data: rules } = await supabase
@@ -155,14 +232,22 @@ export async function evaluateRules(userId: string): Promise<Alert[]> {
   const now = new Date()
   const toInsert: Record<string, unknown>[] = []
 
+  // Cache comercial records if any rule needs them
+  let comercialRecords: Record<string, unknown>[] | null = null
+  const needsComercial = rules.some(r => (r.definition as RuleDefinition)?.entity_type === 'comercial')
+  if (needsComercial) {
+    comercialRecords = await buildComercialRecords(supabase, now)
+  }
+
   for (const rule of rules) {
     const def = rule.definition as RuleDefinition
     if (!def?.entity_type || !def?.conditions?.length) continue
 
-    // Fetch records for this entity
     let records: Record<string, unknown>[] = []
 
-    if (def.entity_type === 'opportunity') {
+    if (def.entity_type === 'comercial') {
+      records = comercialRecords ?? []
+    } else if (def.entity_type === 'opportunity') {
       const { data } = await supabase
         .from('opportunities')
         .select('id, title, stage, value, updated_at, expected_close_date, owner_id')
@@ -179,14 +264,11 @@ export async function evaluateRules(userId: string): Promise<Alert[]> {
       records = (data ?? []) as Record<string, unknown>[]
     }
 
-    // Filter records that match ALL conditions
-    const matched = records.filter(r =>
-      def.conditions.every(cond => evalCondition(cond, r, now))
-    )
+    const matched = records.filter(r => def.conditions.every(c => evalCondition(c, r, now)))
 
     for (const record of matched) {
-      const entityName = (record.title ?? record.name ?? '') as string
-      const assignedTo = (record.owner_id ?? record.assigned_to ?? null) as string | null
+      const entityName = String(record.title ?? record.name ?? '')
+      const assignedTo = String(record.owner_id ?? record.assigned_to ?? '')
       const message = buildMessage(def.action.message_template, { ...record, name: entityName })
 
       toInsert.push({
@@ -198,14 +280,13 @@ export async function evaluateRules(userId: string): Promise<Alert[]> {
         message,
         severity: def.action.severity,
         is_read: false,
-        assigned_to: assignedTo,
+        assigned_to: assignedTo || null,
       })
     }
   }
 
   if (toInsert.length === 0) return []
 
-  // Deduplicar: não criar se já existe alerta não lido para este rule+entity
   const { data: existing } = await supabase
     .from('alerts')
     .select('rule_id, entity_id')
