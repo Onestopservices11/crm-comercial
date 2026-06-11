@@ -53,7 +53,7 @@ export default function FaturacaoPage() {
         }
       />
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total Faturado', value: formatCurrency(invoices.reduce((s, i) => s + i.amount, 0)) },
           { label: 'Recebido', value: formatCurrency(totalPago) },

@@ -55,13 +55,13 @@ export function InvoiceModal({ invoice, onClose, onSaved }: InvoiceModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">{invoice ? 'Editar Fatura' : 'Nova Fatura'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Número" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="FT 2026/001" />
             <Input label="Valor (€)" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
@@ -71,7 +71,7 @@ export function InvoiceModal({ invoice, onClose, onSaved }: InvoiceModalProps) {
             onChange={(e) => setOpportunityId(e.target.value)}
             options={[{ value: '', label: 'Sem oportunidade' }, ...opportunities.map((o) => ({ value: o.id, label: o.title }))]}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Data de emissão" type="date" value={issuedAt} onChange={(e) => setIssuedAt(e.target.value)} />
             <Select
               label="Estado"

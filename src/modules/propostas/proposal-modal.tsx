@@ -70,7 +70,7 @@ export function ProposalModal({ proposal, onClose, onSaved }: ProposalModalProps
             onChange={(e) => setClientId(e.target.value)}
             options={[{ value: '', label: 'Sem cliente' }, ...clients.map((c) => ({ value: c.id, label: c.name }))]}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
               label="Estado"
               value={status}

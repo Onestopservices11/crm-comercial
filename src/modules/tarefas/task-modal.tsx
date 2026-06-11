@@ -57,7 +57,7 @@ export function TaskModal({ task, onClose, onSaved }: TaskModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">{task ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
@@ -79,7 +79,7 @@ export function TaskModal({ task, onClose, onSaved }: TaskModalProps) {
             onChange={(e) => setAssignedTo(e.target.value)}
             options={users.map((u) => ({ value: u.id, label: u.full_name }))}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
               label="Prioridade"
               value={priority}

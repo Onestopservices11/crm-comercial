@@ -67,11 +67,11 @@ export function ClientModal({ client, onClose, onSaved }: ClientModalProps) {
         </div>
         <div className="p-6 space-y-4">
           <Input label="Nome *" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do cliente" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@empresa.com" />
             <Input label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+351 9xx xxx xxx" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Empresa" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Nome da empresa" />
             <Input label="Setor" value={sector} onChange={(e) => setSector(e.target.value)} placeholder="Ex: Tecnologia" />
           </div>

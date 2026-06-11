@@ -50,7 +50,7 @@ export default function ComissoesPage() {
     <div>
       <PageHeader title="Comissões" description="Gestão e acompanhamento de comissões" />
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: formatCurrency(total), color: 'text-gray-900' },
           { label: 'Pendente', value: formatCurrency(totalPendente), color: 'text-yellow-600' },

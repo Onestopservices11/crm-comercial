@@ -115,12 +115,12 @@ export default function PermissoesPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
         {/* Header */}
-        <div className="grid border-b border-gray-200 bg-gray-50" style={{ gridTemplateColumns: '1fr repeat(2, 160px)' }}>
-          <div className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Módulo</div>
+        <div className="grid border-b border-gray-200 bg-gray-50 min-w-[340px]" style={{ gridTemplateColumns: '1fr repeat(2, 130px)' }}>
+          <div className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Módulo</div>
           {ROLES.map(r => (
-            <div key={r.key} className="px-4 py-3 text-center">
+            <div key={r.key} className="px-2 py-3 text-center">
               <span className={`text-xs font-semibold px-2 py-1 rounded-full ${r.color}`}>{r.label}</span>
             </div>
           ))}
@@ -135,8 +135,8 @@ export default function PermissoesPage() {
             {MODULES.filter(m => m.group === group).map((mod, i, arr) => (
               <div
                 key={mod.key}
-                className={`grid items-center ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}
-                style={{ gridTemplateColumns: '1fr repeat(2, 160px)' }}
+                className={`grid items-center min-w-[340px] ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}
+                style={{ gridTemplateColumns: '1fr repeat(2, 130px)' }}
               >
                 <div className="px-6 py-3.5 text-sm font-medium text-gray-800">{mod.label}</div>
                 {ROLES.map(r => {

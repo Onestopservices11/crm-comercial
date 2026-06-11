@@ -67,7 +67,7 @@ export function EventModal({ event, onClose, onSaved }: EventModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">{event ? 'Editar Evento' : 'Novo Evento'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
@@ -86,7 +86,7 @@ export function EventModal({ event, onClose, onSaved }: EventModalProps) {
               { value: 'outro', label: 'Outro' },
             ]}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Início" type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
             <Input label="Fim" type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
           </div>
