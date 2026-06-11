@@ -85,9 +85,7 @@ export type EventType = 'reuniao' | 'chamada' | 'visita' | 'demo' | 'outro'
 export interface Client {
   id: string
   name: string
-  email?: string
-  phone?: string
-  company?: string
+  nif?: string
   sector?: string
   status: ClientStatus
   owner_id: string
@@ -95,6 +93,20 @@ export interface Client {
   created_at: string
   updated_at: string
   owner?: UserProfile
+  contacts?: Contact[]
+}
+
+export interface Contact {
+  id: string
+  client_id: string
+  name: string
+  email?: string
+  phone?: string
+  cargo?: string
+  is_primary: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
 }
 
 export type ClientStatus = 'lead' | 'prospect' | 'ativo' | 'inativo' | 'arquivado'
