@@ -65,13 +65,13 @@ export function RuleModal({ rule, onClose, onSaved }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <h2 className="font-semibold text-slate-900">{rule ? 'Editar Regra' : 'Nova Regra'}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">Nome da regra</label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Oportunidades paradas 7 dias" />
@@ -143,7 +143,7 @@ export function RuleModal({ rule, onClose, onSaved }: Props) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
+        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 shrink-0">
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
           <Button onClick={save} disabled={saving || !name.trim()}>
             {saving ? 'A guardar...' : 'Guardar Regra'}
