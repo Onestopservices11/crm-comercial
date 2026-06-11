@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Users, MessageSquare, BarChart2, CheckSquare, Calendar,
-  CalendarDays, DollarSign, UserCircle, FileText, FileEdit,
+  CalendarDays, DollarSign, UserCircle, FileText,
   BookOpen, LayoutDashboard, LogOut, ChevronLeft, ChevronRight,
   UserCog, ShieldCheck, Menu, X, Zap, Target
 } from 'lucide-react'
@@ -41,9 +41,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/clientes',  label: 'Clientes',   icon: UserCircle, module: 'clientes',  step: '1' },
       { href: '/pipeline',  label: 'Pipeline',   icon: BarChart2,  module: 'pipeline',  step: '2' },
-      { href: '/propostas', label: 'Propostas',  icon: FileEdit,   module: 'propostas', step: '3' },
-      { href: '/faturacao', label: 'Faturação',  icon: FileText,   module: 'faturacao', step: '4' },
-      { href: '/comissoes', label: 'Comissões',  icon: DollarSign, module: 'comissoes', step: '5' },
+      { href: '/comissoes', label: 'Comissões',  icon: DollarSign, module: 'comissoes', step: '3' },
     ],
   },
   {

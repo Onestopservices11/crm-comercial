@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { TrendingUp, Users, CheckSquare, FileEdit, DollarSign, UserCircle, Calendar, ArrowRight } from 'lucide-react'
 import { formatCurrency, formatDate, roleLabel, isDirector } from '@/lib/utils'
 import Link from 'next/link'
@@ -24,6 +23,16 @@ interface DashboardData {
   pipelinePorEtapa: { stage: string; count: number; value: number }[]
   eventosHoje: { id: string; title: string; event_type: string; start_at: string }[]
   oportunidadesRecentes: { id: string; title: string; stage: string; value: number; client?: { name: string } }[]
+}
+
+interface UserPipelineSummary {
+  id: string
+  full_name: string
+  total: number
+  value: number
+  lead: number
+  proposta: number
+  fecho: number
 }
 
 const stageLabel: Record<string, string> = {
@@ -46,18 +55,19 @@ const eventTypeLabel: Record<string, string> = {
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData]           = useState<DashboardData | null>(null)
+  const [teamSummary, setTeamSummary] = useState<UserPipelineSummary[]>([])
+  const [loading, setLoading]     = useState(true)
   const supabase = createClient()
+
+  const canSeeTeam = user?.role === 'admin' || user?.role === 'diretor_comercial'
 
   useEffect(() => {
     if (!user) return
     const load = async () => {
       const today = new Date()
       const todayStart = new Date(today.setHours(0, 0, 0, 0)).toISOString()
-      const todayEnd = new Date(today.setHours(23, 59, 59, 999)).toISOString()
-
-      // Filtro por owner se for comercial
+      const todayEnd   = new Date(today.setHours(23, 59, 59, 999)).toISOString()
       const isComercial = user.role === 'comercial'
 
       const [
@@ -68,21 +78,33 @@ export default function DashboardPage() {
         { data: comissoes },
         { data: eventos },
       ] = await Promise.all([
-        supabase.from('clients').select('id, status').then(q => isComercial ? supabase.from('clients').select('id, status').eq('owner_id', user.id) : supabase.from('clients').select('id, status')),
-        supabase.from('opportunities').select('id, stage, value, title, client:clients(name)').then(q => isComercial ? supabase.from('opportunities').select('id, stage, value, title, client:clients(name)').eq('owner_id', user.id) : supabase.from('opportunities').select('id, stage, value, title, client:clients(name)')),
-        supabase.from('tasks').select('id, title, priority, status, due_date').then(q => isComercial ? supabase.from('tasks').select('id, title, priority, status, due_date').eq('assigned_to', user.id) : supabase.from('tasks').select('id, title, priority, status, due_date')),
-        supabase.from('proposals').select('id, status').then(q => isComercial ? supabase.from('proposals').select('id, status').eq('owner_id', user.id) : supabase.from('proposals').select('id, status')),
-        supabase.from('commissions').select('id, amount, status').then(q => isComercial ? supabase.from('commissions').select('id, amount, status').eq('user_id', user.id) : supabase.from('commissions').select('id, amount, status')),
-        supabase.from('calendar_events').select('id, title, event_type, start_at').gte('start_at', todayStart).lte('start_at', todayEnd).then(q => isComercial ? supabase.from('calendar_events').select('id, title, event_type, start_at').gte('start_at', todayStart).lte('start_at', todayEnd).eq('owner_id', user.id) : supabase.from('calendar_events').select('id, title, event_type, start_at').gte('start_at', todayStart).lte('start_at', todayEnd)),
+        isComercial
+          ? supabase.from('clients').select('id,status').eq('owner_id', user.id)
+          : supabase.from('clients').select('id,status'),
+        isComercial
+          ? supabase.from('opportunities').select('id,stage,value,title,client:clients(name)').eq('owner_id', user.id)
+          : supabase.from('opportunities').select('id,stage,value,title,client:clients(name)'),
+        isComercial
+          ? supabase.from('tasks').select('id,title,priority,status,due_date').eq('assigned_to', user.id)
+          : supabase.from('tasks').select('id,title,priority,status,due_date'),
+        isComercial
+          ? supabase.from('proposals').select('id,status').eq('owner_id', user.id)
+          : supabase.from('proposals').select('id,status'),
+        isComercial
+          ? supabase.from('commissions').select('id,amount,status').eq('user_id', user.id)
+          : supabase.from('commissions').select('id,amount,status'),
+        isComercial
+          ? supabase.from('calendar_events').select('id,title,event_type,start_at').gte('start_at', todayStart).lte('start_at', todayEnd).eq('owner_id', user.id)
+          : supabase.from('calendar_events').select('id,title,event_type,start_at').gte('start_at', todayStart).lte('start_at', todayEnd),
       ])
 
-      const opps = oportunidades ?? []
+      const opps  = oportunidades ?? []
       const tasks = tarefas ?? []
       const comms = comissoes ?? []
 
       setData({
-        totalClientes: clientes?.length ?? 0,
-        clientesAtivos: clientes?.filter(c => c.status === 'ativo').length ?? 0,
+        totalClientes:    clientes?.length ?? 0,
+        clientesAtivos:   clientes?.filter(c => c.status === 'ativo').length ?? 0,
         totalOportunidades: opps.filter(o => o.stage !== 'perdido').length,
         valorPipeline: opps.filter(o => !['perdido', 'fecho'].includes(o.stage)).reduce((s, o) => s + (o.value ?? 0), 0),
         tarefasPendentes: tasks.filter(t => t.status === 'por_fazer' || t.status === 'em_progresso').length,
@@ -96,10 +118,70 @@ export default function DashboardPage() {
           value: opps.filter(o => o.stage === stage).reduce((s, o) => s + (o.value ?? 0), 0),
         })),
         eventosHoje: eventos ?? [],
-        oportunidadesRecentes: opps.filter(o => o.stage !== 'perdido').slice(0, 5).map(o => ({ ...o, client: Array.isArray(o.client) ? o.client[0] : o.client })) as DashboardData['oportunidadesRecentes'],
+        oportunidadesRecentes: opps.filter(o => o.stage !== 'perdido').slice(0, 5).map(o => ({
+          ...o, client: Array.isArray(o.client) ? o.client[0] : o.client,
+        })) as DashboardData['oportunidadesRecentes'],
       })
+
+      // Resumo por pessoa — admin e diretor
+      if (canSeeTeam) {
+        let userIds: string[] = []
+        if (user.role === 'admin') {
+          const { data: profiles } = await supabase.from('profiles').select('id,full_name').eq('active', true)
+          userIds = (profiles ?? []).map(p => p.id)
+          const { data: allOpps } = await supabase
+            .from('opportunities')
+            .select('owner_id,stage,value,owner:profiles(id,full_name)')
+          const map: Record<string, UserPipelineSummary> = {}
+          for (const p of profiles ?? []) {
+            map[p.id] = { id: p.id, full_name: p.full_name, total: 0, value: 0, lead: 0, proposta: 0, fecho: 0 }
+          }
+          for (const o of allOpps ?? []) {
+            const uid = o.owner_id
+            if (!map[uid]) continue
+            if (o.stage === 'perdido') continue
+            map[uid].total++
+            map[uid].value += o.value ?? 0
+            if (o.stage === 'lead') map[uid].lead++
+            if (o.stage === 'proposta') map[uid].proposta++
+            if (o.stage === 'fecho') map[uid].fecho++
+          }
+          setTeamSummary(Object.values(map).filter(u => u.total > 0 || userIds.includes(u.id)))
+        } else {
+          // diretor: busca membros da equipa
+          const { data: teams } = await supabase.from('teams').select('id').eq('director_id', user.id)
+          const teamIds = (teams ?? []).map(t => t.id)
+          if (teamIds.length > 0) {
+            const { data: members } = await supabase
+              .from('team_members')
+              .select('user:profiles(id,full_name)')
+              .in('team_id', teamIds)
+            const memberProfiles = (members ?? []).flatMap((m: { user: { id: string; full_name: string }[] | { id: string; full_name: string } | null }) => Array.isArray(m.user) ? m.user : m.user ? [m.user] : []) as { id: string; full_name: string }[]
+            userIds = memberProfiles.map(p => p.id)
+            if (userIds.length > 0) {
+              const { data: memberOpps } = await supabase
+                .from('opportunities')
+                .select('owner_id,stage,value')
+                .in('owner_id', userIds)
+              const map: Record<string, UserPipelineSummary> = {}
+              for (const p of memberProfiles) {
+                map[p.id] = { id: p.id, full_name: p.full_name, total: 0, value: 0, lead: 0, proposta: 0, fecho: 0 }
+              }
+              for (const o of memberOpps ?? []) {
+                if (o.stage === 'perdido') continue
+                map[o.owner_id].total++
+                map[o.owner_id].value += o.value ?? 0
+                if (o.stage === 'lead') map[o.owner_id].lead++
+                if (o.stage === 'proposta') map[o.owner_id].proposta++
+                if (o.stage === 'fecho') map[o.owner_id].fecho++
+              }
+              setTeamSummary(Object.values(map))
+            }
+          }
+        }
+      }
+
       setLoading(false)
-      // Avaliar regras em background
       evaluateRules(user.id).catch(console.error)
     }
     load()
@@ -114,19 +196,18 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { label: 'Clientes Ativos',      value: data.clientesAtivos,                    sub: `${data.totalClientes} total`,           icon: UserCircle,  color: 'text-blue-600',   bg: 'bg-blue-500',    href: '/clientes' },
-    { label: 'Pipeline Ativo',       value: formatCurrency(data.valorPipeline),     sub: `${data.totalOportunidades} oportunidades`, icon: TrendingUp,  color: 'text-emerald-600', bg: 'bg-emerald-500', href: '/pipeline' },
-    { label: 'Tarefas Pendentes',    value: data.tarefasPendentes,                  sub: 'por fazer / em progresso',               icon: CheckSquare, color: 'text-amber-600',  bg: 'bg-amber-500',   href: '/tarefas' },
-    { label: 'Propostas Abertas',    value: data.propostas,                         sub: 'enviadas / negociação',                  icon: FileEdit,    color: 'text-purple-600', bg: 'bg-purple-500',  href: '/propostas' },
-    { label: 'Comissões Pendentes',  value: formatCurrency(data.valorComissoesPendentes), sub: `${data.comissoesPendentes} por aprovar`, icon: DollarSign, color: 'text-orange-600', bg: 'bg-orange-500', href: '/comissoes' },
-    { label: 'Eventos Hoje',         value: data.eventosHoje.length,                sub: new Date().toLocaleDateString('pt-PT', { weekday: 'long' }), icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-500', href: '/agenda' },
+    { label: 'Clientes Ativos',     value: data.clientesAtivos,                    sub: `${data.totalClientes} total`,              icon: UserCircle,  bg: 'bg-blue-500',    href: '/clientes' },
+    { label: 'Pipeline Ativo',      value: formatCurrency(data.valorPipeline),     sub: `${data.totalOportunidades} oportunidades`, icon: TrendingUp,  bg: 'bg-emerald-500', href: '/pipeline' },
+    { label: 'Tarefas Pendentes',   value: data.tarefasPendentes,                  sub: 'por fazer / em progresso',                 icon: CheckSquare, bg: 'bg-amber-500',   href: '/tarefas' },
+    { label: 'Propostas Abertas',   value: data.propostas,                         sub: 'enviadas / negociação',                    icon: FileEdit,    bg: 'bg-purple-500',  href: '/pipeline' },
+    { label: 'Comissões Pendentes', value: formatCurrency(data.valorComissoesPendentes), sub: `${data.comissoesPendentes} por aprovar`, icon: DollarSign, bg: 'bg-orange-500', href: '/comissoes' },
+    { label: 'Eventos Hoje',        value: data.eventosHoje.length,                sub: new Date().toLocaleDateString('pt-PT', { weekday: 'long' }), icon: Calendar, bg: 'bg-indigo-500', href: '/agenda' },
   ]
 
   const today = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Olá, {user?.full_name.split(' ')[0]} 👋</h1>
         <p className="text-sm text-slate-500 mt-0.5 capitalize">{roleLabel(user!.role)} · {today}</p>
@@ -154,13 +235,49 @@ export default function DashboardPage() {
         })}
       </div>
 
+      {/* Resumo de equipa — admin e diretor */}
+      {canSeeTeam && teamSummary.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-slate-900">Pipeline por Comercial</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{teamSummary.length} utilizadores com oportunidades</p>
+            </div>
+            <Link href="/pipeline" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              Ver pipeline <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {teamSummary.sort((a, b) => b.value - a.value).map(u => (
+              <div key={u.id} className="flex items-center gap-4">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-blue-600">{u.full_name.charAt(0)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium text-slate-800 truncate">{u.full_name.split(' ')[0]}</p>
+                    <p className="text-sm font-bold text-slate-900 shrink-0 ml-2">{formatCurrency(u.value)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-slate-400">{u.total} oport.</span>
+                    {u.lead > 0   && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{u.lead} lead</span>}
+                    {u.proposta > 0 && <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">{u.proposta} proposta</span>}
+                    {u.fecho > 0  && <span className="text-[10px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full">{u.fecho} fecho</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* Pipeline por etapa */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-semibold text-slate-900">Pipeline</h3>
+              <h3 className="font-semibold text-slate-900">Pipeline por Etapa</h3>
               <p className="text-xs text-slate-400 mt-0.5">Valor por etapa</p>
             </div>
             <Link href="/pipeline" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
@@ -254,7 +371,7 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {data.eventosHoje.map(ev => (
                 <div key={ev.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-slate-50">
-                  <div className="shrink-0 text-center w-12">
+                  <div className="shrink-0 w-12 text-center">
                     <p className="text-xs font-bold text-slate-900">
                       {new Date(ev.start_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
                     </p>
