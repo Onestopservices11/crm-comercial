@@ -178,6 +178,32 @@ export interface ChatChannel {
   created_at: string
 }
 
+export interface MetricDefinition {
+  id: string
+  name: string
+  description?: string
+  metric_type: string
+  period: string
+  default_target: number
+  unit: string
+  is_active: boolean
+  created_by?: string
+  created_at: string
+}
+
+export interface MetricAssignment {
+  id: string
+  metric_id: string
+  assigned_to: string
+  assigned_by?: string
+  target: number
+  period_start: string
+  period_end: string
+  created_at: string
+  metric?: MetricDefinition
+  user?: UserProfile
+}
+
 export type RuleSeverity = 'info' | 'warning' | 'danger'
 
 export interface Rule {

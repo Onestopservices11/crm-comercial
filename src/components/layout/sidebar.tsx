@@ -6,7 +6,7 @@ import {
   Users, MessageSquare, BarChart2, CheckSquare, Calendar,
   CalendarDays, DollarSign, UserCircle, FileText, FileEdit,
   BookOpen, LayoutDashboard, LogOut, ChevronLeft, ChevronRight,
-  UserCog, ShieldCheck, Menu, X, Zap
+  UserCog, ShieldCheck, Menu, X, Zap, Target
 } from 'lucide-react'
 import { AlertsBell } from '@/components/alerts/alerts-bell'
 import { cn } from '@/lib/utils'
@@ -53,6 +53,7 @@ const navGroups: NavGroup[] = [
       { href: '/agenda',         label: 'Agenda',         icon: Calendar,     module: 'agenda' },
       { href: '/agenda-central', label: 'Agenda Central', icon: CalendarDays, module: 'agenda_central' },
       { href: '/procedimentos',  label: 'Procedimentos',  icon: BookOpen,     module: 'procedimentos' },
+      { href: '/metricas',       label: 'Métricas',       icon: Target,       module: 'metricas' },
     ],
   },
   {
