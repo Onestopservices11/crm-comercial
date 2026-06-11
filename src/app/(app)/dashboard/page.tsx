@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { TrendingUp, Users, CheckSquare, FileEdit, DollarSign, UserCircle, Calendar, ArrowRight } from 'lucide-react'
 import { formatCurrency, formatDate, roleLabel, isDirector } from '@/lib/utils'
 import Link from 'next/link'
+import { evaluateRules } from '@/lib/rules-engine'
 
 interface DashboardData {
   totalClientes: number
@@ -98,6 +99,8 @@ export default function DashboardPage() {
         oportunidadesRecentes: opps.filter(o => o.stage !== 'perdido').slice(0, 5).map(o => ({ ...o, client: Array.isArray(o.client) ? o.client[0] : o.client })) as DashboardData['oportunidadesRecentes'],
       })
       setLoading(false)
+      // Avaliar regras em background (silencioso)
+      evaluateRules(user.id).catch(() => {})
     }
     load()
   }, [user])
